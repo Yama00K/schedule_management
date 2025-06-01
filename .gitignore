@@ -1,0 +1,5 @@
+MyVbApp/
+schedule-manager/backend/__pycache__/
+schedule-manager/certs/
+schedule-manager/backend/db/__pycache__/db_manager.cpython-311.pyc
+.DS_Store
