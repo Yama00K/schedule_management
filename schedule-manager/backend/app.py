@@ -16,10 +16,6 @@ conn.row_factory = sqlite3.Row
 cursor = conn.cursor()
 queries = db_manager(os.path.join(db_path, 'queries.sql'))  # 命令の辞書
 
-@app.route('/')
-def index():
-    return 'Flask backend is working!'
-
 @app.route('/schedules')
 def list_schedules():
     cursor.execute(queries['get_all_schedules'])

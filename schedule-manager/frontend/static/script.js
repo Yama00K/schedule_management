@@ -1,5 +1,5 @@
 // APIエンドポイント
-const API_BASE = "http://localhost:5000/schedules";  // Flaskが5000番ポートで直接起動している場合
+const API_BASE = "http://localhost/api/schedules";  // Flaskが5000番ポートで直接起動している場合
 
 // HTML要素の取得
 const scheduleList = document.getElementById("schedule-list");
