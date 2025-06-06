@@ -15,13 +15,42 @@ conn = sqlite3.connect(os.path.join(db_path, 'schedule.db'), check_same_thread=F
 conn.row_factory = sqlite3.Row
 cursor = conn.cursor()
 queries = db_manager(os.path.join(db_path, 'queries.sql'))  # 命令の辞書
+sql_db_path = os.path.join(db_path, 'init.sql')
+with open(sql_db_path, 'r', encoding='utf-8') as f:
+    sql_db = f.read()
+cursor.executescript(sql_db)
 
 @app.route('/schedules')
-def list_schedules():
+def get_monthly_schedules():
     cursor.execute(queries['get_all_schedules'])
     rows = cursor.fetchall()
     schedules = [dict(row) for row in rows]
-    return jsonify(schedules)
+    month_str = request.args.get('month')
+    if not month_str:
+        now = datetime.now()
+        month_str = now.strftime('%Y-%m')
+    try:
+        month_start = datetime.strptime(month_str, '%Y-%m')
+        month_str = month_start.strftime('%m')
+        year_str = month_start.strftime('%Y')
+        if month_start.month == 12:
+            month_end = month_start.replace(year=month_start.year + 1, month=1)
+        else:
+            month_end = month_start.replace(month=month_start.month + 1)
+    except ValueError:
+        return jsonify({"error": "Invalid month format. Use YYYY-MM"}), 400
+
+    def overlaps(schedule):
+        start = datetime.strptime(schedule['start'], '%Y-%m-%dT%H:%M:%S')
+        end = datetime.strptime(schedule['end'], '%Y-%m-%dT%H:%M:%S')
+        return not (end < month_start or start >= month_end)
+
+    filtered = [s for s in schedules if overlaps(s)]
+    return jsonify({
+        'year': year_str,
+        'month': month_str,
+        'schedules': filtered
+    })
 
 @app.route('/schedules/get_byid/<int:id>')
 def get_schedule_by_id(id):
