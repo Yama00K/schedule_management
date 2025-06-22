@@ -1,4 +1,5 @@
 -- db/init.sql
+DELETE FROM schedules;
 
 CREATE TABLE IF NOT EXISTS schedules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -47,8 +47,8 @@ def get_monthly_schedules():
 
     filtered = [s for s in schedules if overlaps(s)]
     return jsonify({
-        'year': year_str,
-        'month': month_str,
+        'year': year_str,   # カレンダー生成用
+        'month': month_str, # カレンダー生成用
         'schedules': filtered
     })
 

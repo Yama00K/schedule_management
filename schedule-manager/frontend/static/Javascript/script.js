@@ -5,10 +5,12 @@ async function fetchSchedules() {
         if (!response.ok) throw new Error("API通信失敗");
 
         const schedules = await response.json();
+        console.log("取得したスケジュール:", schedules);
         renderCalendar(schedules.year, schedules.month)
         schedules.schedules.forEach(schedule => {
             const startDate = schedule.start.split('T')[0];
             const endDate = schedule.end.split('T')[0];
+            console.log(`スケジュール: ${schedule.title}, 開始: ${startDate}, 終了: ${endDate}`);
             for(
                 let date = new Date(startDate);
                 date <= new Date(endDate);
@@ -18,7 +20,6 @@ async function fetchSchedules() {
                 const cell = document.querySelector(`td[data-date="${dateStr}"]`);
                 if (cell) {
                     const div = document.createElement('div');
-
                     if (startDate === endDate) {
                         const start_time = schedule.start.slice(11, 16);
                         const end_time = schedule.end.slice(11, 16);
@@ -67,8 +68,6 @@ function renderCalendar(year, month) {
         cell.textContent = '';
       } else {
         cell.textContent = day;
-        // 予定があればここに追加できるようにする
-        // cell.innerHTML += '<div class="event">...</div>';
         day++;
       }
       row_day.appendChild(cell);
@@ -84,9 +83,8 @@ function renderCalendar(year, month) {
       if ((day_schedule === 1 && i < startWeekday) || day_schedule > numDays) {
         cell.textContent = '';
       } else {
-        cell.setAttribute('data-date', `${year}-${String(month + 1).padStart(2, '0')}-${String(day_schedule).padStart(2, '0')}`);
-        // 予定があればここに追加できるようにする
-        // cell.innerHTML += '<div class="event">...</div>';
+        cell.setAttribute('data-date', `${year}-${String(month).padStart(2, '0')}-${String(day_schedule).padStart(2, '0')}`);
+        console.log("")
         day_schedule++;
       }
       row_schedule.appendChild(cell);
