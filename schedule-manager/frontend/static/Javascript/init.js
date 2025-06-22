@@ -6,6 +6,8 @@ async function fetchSchedules() {
 
         const schedules = await response.json();
         console.log("取得したスケジュール:", schedules);
+        const current_month = document.getElementById('current-month');
+        current_month.innerHTML = `${schedules.year}-${schedules.month}`;
         renderCalendar(schedules.year, schedules.month)
         schedules.schedules.forEach(schedule => {
             const startDate = schedule.start.split('T')[0];
@@ -50,8 +52,8 @@ function renderCalendar(year, month) {
   const calendarBody = document.querySelector('#calendar tbody');
   calendarBody.innerHTML = ''; // カレンダーを初期化
 
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
   const numDays = lastDay.getDate();
   const startWeekday = firstDay.getDay(); // 0 = 日曜
 
