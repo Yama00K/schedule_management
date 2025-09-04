@@ -1,0 +1,58 @@
+
+services:
+  # 1. データベース (MySQL)
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # 強力なパスワードに変更してください
+      MYSQL_DATABASE: app_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306" # ホストPCからDBに接続する場合に必要
+    volumes:
+      - db-data:/var/lib/mysql
+
+  # 2. バックエンド (Python)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: python_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/src:/app # ローカルのsrcをコンテナの/appに同期
+    environment:
+      DATABASE_URL: "mysql+pymysql://user:password@db/app_db" # DB接続情報
+    depends_on:
+      - db # dbコンテナが起動してからbackendを起動
+
+  # 3. フロントエンド (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nextjs_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app # ローカルのfrontendをコンテナの/appに同期
+      - /app/node_modules # node_modulesはコンテナ内のものを使用
+      - /app/.next # Next.jsビルドキャッシュをコンテナ内に保持
+    stdin_open: true # インタラクティブモード
+    tty: true # Next.jsのホットリロードに必要
+    environment:
+      - WATCHPACK_POLLING=true # ファイル変更監視を有効化（macOS/Windows推奨）
+      # - CHOKIDAR_USEPOLLING=true # 追加のポーリング設定
+      - NEXT_TELEMETRY_DISABLED=1 # テレメトリ無効化
+      - NODE_ENV=development # 開発モード明示
+    depends_on:
+      - backend # backendコンテナが起動してからfrontendを起動
+
+volumes:
+  db-data: # DBデータを永続化するためのボリューム
