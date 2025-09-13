@@ -19,7 +19,7 @@ export default function Home() {
           <Link href="/schedules">
             <Button variant="default">スケジュール一覧へ</Button>
           </Link>
-          <Link href="/schedules/new">
+          <Link href="/add-schedule">
             <Button variant="default">新しいスケジュールを作成</Button>
           </Link>
         </div>

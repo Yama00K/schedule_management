@@ -59,7 +59,7 @@ class Tag(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # name: タグの名前
-    name = Column(String(50), nullable=False, unique=True)
+    name = Column(String(50), nullable=False, unique=True, index=True)
 
     # schedules: タグに関連するスケジュールのリスト（リレーションシップ）
     schedules = relationship("Schedule", back_populates="tags", lazy='dynamic')
