@@ -5,3 +5,5 @@ pymysql
 alembic
 pymysql
 cryptography
+python-dotenv
+pydantic-settings
