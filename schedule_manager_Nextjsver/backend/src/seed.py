@@ -46,15 +46,15 @@ try:
             tag_id=work_tag.id # 取得したIDを指定
         ),
         Schedule(
-            title="友人とのランチ",
-            description="駅前のカフェで",
+            title="友人とカラオケ",
+            description="駅前のカラオケで遊ぶ",
             start_time=datetime(2025, 9, 15, 12, 30, 0),
             end_time=datetime(2025, 9, 15, 14, 0, 0),
             tag_id=private_tag.id # 取得したIDを指定
         ),
         Schedule(
-            title="Next.jsの学習",
-            description="公式チュートリアルを進める",
+            title="研究室のゼミ",
+            description="研究の進捗を報告",
             start_time=datetime(2025, 9, 16, 19, 0, 0),
             end_time=datetime(2025, 9, 16, 21, 0, 0),
             tag_id=learning_tag.id # 取得したIDを指定

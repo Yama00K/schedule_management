@@ -1,10 +1,12 @@
 "use client"
 
 import { Calendar } from "@/components/ui/calendar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DayProps } from "react-day-picker";
+import { format } from "date-fns";
 
+// APIから取得するイベントデータの型
 interface ApiEventData {
     created_at: string
     description: string
@@ -17,16 +19,18 @@ interface ApiEventData {
     updated_at: string
 }
 
+// 表示するイベントデータの型
 interface EventData {
     date: string; // 'YYYY-MM-DD'形式の日付
     events: {
         title: string;
-        time: string;
+        start_time: string;
+        end_time: string;
         contents: string;
     }[];
 }
 
-// ✅ 必須パラメータ対応: dateが必ず存在することを保証
+// APIからイベントデータを取得する関数
 async function fetchEvents(date: Date): Promise<ApiEventData[]> {
     // ✅ 1. 入力検証 - dateが有効かチェック
     if (!date || isNaN(date.getTime())) {
@@ -40,7 +44,7 @@ async function fetchEvents(date: Date): Promise<ApiEventData[]> {
         // ✅ 2. 必須パラメータの取得
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
-        
+
         console.log('📡 必須パラメータ:', { year, month });
         
         // ✅ 3. 必須パラメータでURLSearchParamsを構築
@@ -69,10 +73,11 @@ async function fetchEvents(date: Date): Promise<ApiEventData[]> {
     }
 }
 
+// カレンダーへ埋め込むカスタムdayコンポーネント
 function CustomDay(props: DayProps, eventdata: EventData[]) {
-    const dateString = props.day.date.toISOString().split('T')[0];
+    const dateString = format(props.day.date, 'yyyy年M月d日');
     const dayData = eventdata.find(data => data.date === dateString);
-    const isToday = new Date().toDateString() === props.day.date.toDateString();
+    const isToday = format(new Date(), 'yyyy-MM-dd') === format(props.day.date, 'yyyy-MM-dd');
 
     if (dayData && dayData.events.length > 0) {
         return (
@@ -124,7 +129,10 @@ function CustomDay(props: DayProps, eventdata: EventData[]) {
                                             {event.contents}
                                         </p>
                                         <p className="text-xs text-gray-400">
-                                            {event.time}
+                                            開始時刻:{event.start_time}
+                                        </p>
+                                        <p className="text-xs text-gray-400">
+                                            終了時刻:{event.end_time}
                                         </p>
                                         <p className="text-xs text-gray-400">
                                             イベント {index + 1}
@@ -155,22 +163,16 @@ function CustomDay(props: DayProps, eventdata: EventData[]) {
     );
 }
 
+// メインコンポーネント(イベントカレンダー)
 export default function PopCalendar() {
-    // ✅ 4. undefinedを許可しない型定義
     const [date, setDate] = useState<Date>(new Date()); // Date | undefined → Date
     const [eventdata, setEventdata] = useState<EventData[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
-    
-    // ✅ 5. 依存配列で年月の変更を監視
+
+    // dateが変わるたびにイベントを再取得
     useEffect(() => {
         const loadEvents = async () => {
-            if (!date) {
-                console.error('❌ Date is undefined');
-                setError('日付が設定されていません');
-                setLoading(false);
-                return;
-            }
 
             setLoading(true);
             setError('');
@@ -182,20 +184,42 @@ export default function PopCalendar() {
                 
                 const rawEvents: ApiEventData[] = await fetchEvents(date);
 
-                const eventsMap = new Map<string, { title: string; time: string; contents: string }[]>();
+                const eventsMap = new Map<string, { title: string; start_time: string; end_time: string; contents: string }[]>();
 
                 rawEvents.forEach(event => {
-                    const startDate = new Date(event.start_time);
-                    const endDate = new Date(event.end_time);
+                    const startDate = new Date(event.start_time + 'Z');
+                    const endDate = new Date(event.end_time + 'Z');
                     const currentDate = new Date(startDate);
+                    let startTimeDisplay = null;
+                    let endTimeDisplay = null;
                     
                     while (currentDate <= endDate) {
-                        const dateString = currentDate.toISOString().split('T')[0];
-                        const timeDisplay = startDate.toISOString().split('T')[1].split('.')[0].substring(0, 5); // "HH:MM"
+                        const dateString = format(currentDate, 'yyyy年M月d日');
+                        // 開始日か判断
+                        if (currentDate.getDate() === startDate.getDate()) {
+                            startTimeDisplay = startDate.toLocaleString(undefined, {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        hour12: false
+                                                    });
+                        } else{
+                            startTimeDisplay = '';
+                        };
+                        // 終了日か判断
+                        if (currentDate.getDate() === endDate.getDate()){
+                            endTimeDisplay = endDate.toLocaleString(undefined, {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            });
+                        } else {
+                            endTimeDisplay = '';  
+                        };
 
                         const eventItem = {
                             title: event.title,
-                            time: timeDisplay,
+                            start_time: startTimeDisplay,
+                            end_time: endTimeDisplay,
                             contents: event.description || '詳細情報なし'
                         };
 
@@ -224,17 +248,16 @@ export default function PopCalendar() {
         };
         
         loadEvents();
-    }, [date.getFullYear(), date.getMonth()]); // ✅ これで確実にページめくりを検知
+    }, [date]); // ✅ これで確実にページめくりを検知
 
-    // ✅ 9. CalendarのonSelectでnull/undefinedを処理
-    const handleDateSelect = (selectedDate: Date | undefined) => {
-        if (selectedDate) {
-            setDate(selectedDate);
-        }
-        // undefinedの場合は何もしない（現在の日付を保持）
-    };
+    const handleMonthChange = (updatedMonth: Date) => {
+        setDate(updatedMonth); // 月変更時にdateも更新
+        console.log('📅 月変更:', updatedMonth);
+    }
 
-    const CustomDayWithEvents = (props: DayProps) => CustomDay(props, eventdata);
+    const CustomDayWithEvents = useCallback((props: DayProps) => {
+        return CustomDay(props, eventdata);
+    }, [eventdata]); // eventdataが変わったときだけ、この関数を再生成する
 
     if (loading) {
         return (
@@ -269,33 +292,13 @@ export default function PopCalendar() {
             <Calendar
                 mode="single"
                 selected={date}
-                onSelect={handleDateSelect} // ✅ 10. null/undefined対応
+                month={date}
+                onMonthChange={handleMonthChange}
                 className="rounded-md border"
                 components={{
                     Day: CustomDayWithEvents
                 }}
             />
-            
-            {/* ✅ 拡張デバッグ情報 */}
-            {process.env.NODE_ENV === 'development' && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                    <h4 className="font-semibold mb-2">🔧 必須パラメータ確認</h4>
-                    <div className="text-sm space-y-1">
-                        <p><strong>取得されたイベント数:</strong> {eventdata.length}</p>
-                        <p><strong>選択された日付:</strong> {date.getFullYear()}年{date.getMonth() + 1}月{date.getDate()}日</p>
-                        <p><strong>送信パラメータ:</strong> 
-                            <code className="bg-gray-200 px-1 rounded">
-                                year={date.getFullYear()}&month={date.getMonth() + 1}
-                            </code>
-                        </p>
-                        <p><strong>日付の有効性:</strong> 
-                            <span className={date && !isNaN(date.getTime()) ? 'text-green-600' : 'text-red-600'}>
-                                {date && !isNaN(date.getTime()) ? '✅ 有効' : '❌ 無効'}
-                            </span>
-                        </p>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

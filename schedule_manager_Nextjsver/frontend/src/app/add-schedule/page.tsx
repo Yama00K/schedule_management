@@ -8,14 +8,16 @@ import Link from "next/link";
 import InputDateTime from "@/components/InputDateTime";
 import { UserStarIcon } from "lucide-react";
 
+// APIに送信するデータの型を定義
 interface ScheduleData {
     title: string;
-    start_time: string;
-    end_time: string;
+    start_time: Date;
+    end_time: Date;
     tag: string;
     description: string;
 }
 
+// スケジュールを追加するAPIを呼び出す関数
 async function addSchedule(data: ScheduleData) {
     try{
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -51,7 +53,6 @@ export default function Home() {
     const [title, setTitle] = useState('');
     const [tag, setTag] = useState('');
     const [description, setDescription] = useState('');
-    const [refetchIndex, setRefetchIndex] = useState(0); // refetch用のstate
 
     // 選択肢の配列を生成
     const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -62,6 +63,8 @@ export default function Home() {
 
     // 入力内容をクリアする関数
     const clearForm = () => {
+        setStartDate(new Date());
+        setEndDate(new Date());
         setStartHour('00');
         setStartMinute('00');
         setEndHour('00');
@@ -69,19 +72,6 @@ export default function Home() {
         setTitle('');
         setTag('');
         setDescription('');
-        setRefetchIndex(prev => prev + 1); // refetch用にインデックスを更新
-    };
-
-    //　日本時間へ変換
-    const formatDateToLocalISO = (date: Date | null): string => {
-        if (!date || !(date instanceof Date)) {
-            throw new Error('有効な日付が選択されていません');
-        }
-        
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
     };
 
     // 追加ボタンのクリックハンドラー
@@ -100,10 +90,23 @@ export default function Home() {
         setIsLoading(true);
 
         try {
+            // 開始日時のDateオブジェクトを作成
+            const startDateTime = new Date(startDate);
+            startDateTime.setHours(parseInt(startHour, 10), parseInt(startMinute, 10), 0, 0);
+            console.log('startDateTime:', startDateTime);
+
+            // 終了日時のDateオブジェクトを作成
+            const endDateTime = new Date(endDate);
+            endDateTime.setHours(parseInt(endHour, 10), parseInt(endMinute, 10), 0, 0);
+            console.log('endDateTime:', endDateTime);
+
+            console.log('startDateTime.toISOString():', startDateTime.toISOString());
+            console.log('endDateTime.toISOString():', endDateTime.toISOString());
+            // 保存するスケジュールデータを作成
             const scheduleData: ScheduleData = {
                 title: title.trim(),
-                start_time: `${formatDateToLocalISO(startDate)}T${startHour.padStart(2, '0')}:${startMinute.padStart(2, '0')}:00`,
-                end_time: `${formatDateToLocalISO(endDate)}T${endHour.padStart(2, '0')}:${endMinute.padStart(2, '0')}:00`,
+                start_time: startDateTime,
+                end_time: endDateTime,
                 tag: tag.trim(),
                 description,
             };
@@ -117,19 +120,31 @@ export default function Home() {
             }
 
             const response = await addSchedule(scheduleData);
-
+            clearForm();
         } catch (error: any) {
             console.error('Error in handleAddClick:', error);
         } finally {
             setIsLoading(false);
-            clearForm();
         }
     };
-
+    // ロード時に日付をリセット
     useEffect(() => {
         setStartDate(new Date());
         setEndDate(new Date());
-    }, [refetchIndex]);
+    }, []);
+    
+    // 開始日時が変更されたら、終了日時も変更する
+    useEffect(() => {
+        setEndDate(startDate);
+    }, [startDate]);
+
+    useEffect(() => {
+        setEndHour(startHour);
+    }, [startHour]);
+
+    useEffect(() => {
+        setEndMinute(startMinute);
+    }, [startMinute]);
 
     return (
         <div className="container mx-auto p-4 flex flex-col items-center justify-center min-h-screen">

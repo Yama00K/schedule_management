@@ -26,7 +26,7 @@ interface InputDateTimeProps {
     date?: Date;
     hour?: string;
     minute?: string;
-    onDateChange?: (value: Date) => void;
+    onDateChange: (value: Date | undefined) => void;
     onHourChange: (value: string) => void;
     onMinuteChange: (value: string) => void;
 }

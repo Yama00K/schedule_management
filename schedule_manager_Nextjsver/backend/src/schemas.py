@@ -13,8 +13,8 @@ class ScheduleBase(BaseModel):
 class ScheduleCreate(BaseModel):
     title: str
     description: str | None = None
-    start_time: str
-    end_time: str
+    start_time: datetime
+    end_time: datetime
     tag: str | None = None
 
 # ✅ 読み取り時は、完全なTagオブジェクト（nameを含む）をネストして返す
