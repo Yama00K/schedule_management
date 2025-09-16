@@ -70,6 +70,13 @@ export default function DateFilter({ onFilterChange }: DateFilterProps) {
     setYear(undefined);
     setMonth(undefined);
     setDay(undefined);
+
+    onFilterChange({
+      tag,
+      year,
+      month,
+      day: undefined,
+    });
     setSearchState(!searchState);
   };
 
@@ -90,7 +97,7 @@ export default function DateFilter({ onFilterChange }: DateFilterProps) {
       <div>
         <Label>年</Label>
         <Select
-          value={year ? String(year) : undefined}
+          value={year ? String(year) : ''}
           onValueChange={(value) => setYear(Number(value))}
         >
           <SelectTrigger className="w-[120px]">
@@ -110,7 +117,7 @@ export default function DateFilter({ onFilterChange }: DateFilterProps) {
       <div>
         <Label>月</Label>
         <Select
-          value={month ? String(month) : undefined}
+          value={month ? String(month) : ''}
           onValueChange={(value) => setMonth(Number(value))}
         >
           <SelectTrigger className="w-[120px]">
