@@ -1,10 +1,9 @@
-
 // Linkコンポーネントをnext/linkからインポート
 import Link from 'next/link';
 // shadcn/uiのButtonコンポーネントをインポート
-import { Button } from "@/components/ui/button";
-import LiveClock from "@/components/LiveClock"; // LiveClockコンポーネントをインポート
-import PopCalendar from "@/components/PopCalendar"; // PopCalendarコンポーネントをインポート
+import { Button } from '@/components/ui/button';
+import LiveClock from '@/components/LiveClock'; // LiveClockコンポーネントをインポート
+import PopCalendar from '@/components/PopCalendar'; // PopCalendarコンポーネントをインポート
 
 export default function Home() {
   return (
@@ -13,7 +12,7 @@ export default function Home() {
         <h1 className="text-3xl font-bold mb-4">スケジュール管理アプリ</h1>
         <LiveClock />
         <div className="flex justify-center mt-6 ">
-          <PopCalendar/>
+          <PopCalendar />
         </div>
         <div className="mt-6 space-x-4">
           <Link href="/schedules">
