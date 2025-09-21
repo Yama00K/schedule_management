@@ -18,8 +18,8 @@ app = FastAPI()
 # CORS設定
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=settings.origins_list,
-    allow_origins=["*"],  # 開発中は全許可、本番では適切に設定すること
+    allow_origins=settings.origins_list,
+    # allow_origins=["*"],  # 開発中は全許可、本番では適切に設定すること
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

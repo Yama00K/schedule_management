@@ -1,3 +1,5 @@
+# 変数定義
+ARG PORT=3000
 # ベースイメージ
 FROM node:20-alpine
 
@@ -15,7 +17,7 @@ RUN yarn install --frozen-lockfile
 COPY . .
 
 # Next.jsが使用するポートを公開
-EXPOSE 3000
+EXPOSE ${PORT}
 
 # 開発サーバーの起動コマンド
 CMD ["yarn", "dev"]

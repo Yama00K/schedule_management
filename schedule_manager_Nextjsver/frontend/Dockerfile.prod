@@ -1,0 +1,55 @@
+# 変数定義
+ARG PORT=3000
+
+# ----------------------------------------
+# ステージ1: 依存関係のインストール
+# ----------------------------------------
+FROM node:20-alpine AS deps
+WORKDIR /app
+
+# package.jsonとロックファイルをコピー
+COPY package.json yarn.lock* package-lock.json* ./
+
+# 依存関係をインストール
+# npm ci を使うと、package-lock.jsonに基づいてクリーンインストールされる
+RUN if [ -f package-lock.json ]; then npm ci; \
+    else echo "Lockfile not found." && exit 1; \
+    fi
+
+# ----------------------------------------
+# ステージ2: 本番ビルド
+# ----------------------------------------
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Next.jsが本番ビルド時に環境変数を読み込めるようにARGで渡す
+# ARG NEXT_PUBLIC_API_URL
+# ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+ENV NODE_ENV production
+# 本番用にアプリケーションをビルド
+RUN npm run build
+
+# ----------------------------------------
+# ステージ3: 本番実行
+# ----------------------------------------
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+
+# ビルドステージから、実行に必要なファイルだけをコピー
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+
+# Next.js 12以降のスタンドアロン出力に対応
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+EXPOSE ${PORT}
+ENV PORT=${PORT}
+
+# Next.jsの最適化された本番サーバーを起動
+CMD ["node", "server.js"]
