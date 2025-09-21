@@ -8,6 +8,8 @@ import schemas
 from database import engine, get_db
 from config import settings
 import logging
+import subprocess
+import os
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
@@ -108,3 +110,34 @@ def get_schedules(
     except Exception as e:
         logger.error(f"❌ 予期しないエラー: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error: {str(e)}")
+    
+@app.get("/seed-database")
+def seed_database(secret_key: str):
+    """
+    データベースに初期データを投入するための秘密のエンドポイント。
+    正しいシークレットキーが提供された場合のみ実行される。
+    """
+    # 3. 環境変数から正しいシークレットキーを取得
+    #    Renderの環境変数に SEED_SECRET_KEY を設定する必要がある
+    correct_secret = os.getenv("SEED_SECRET_KEY")
+
+    if not correct_secret or secret_key != correct_secret:
+        # キーが一致しない場合はエラーを返す
+        raise HTTPException(status_code=403, detail="Invalid secret key")
+
+    try:
+        # 4. seed.pyスクリプトを実行
+        result = subprocess.run(
+            ["python", "seed.py"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        # 成功した場合のログを返す
+        return {"message": "Database seeded successfully!", "output": result.stdout}
+    except subprocess.CalledProcessError as e:
+        # 失敗した場合のエラーログを返す
+        raise HTTPException(
+            status_code=500,
+            detail={"message": "Failed to seed database.", "error": e.stderr}
+        )
