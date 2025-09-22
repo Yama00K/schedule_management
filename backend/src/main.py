@@ -111,6 +111,7 @@ def get_schedules(
         logger.error(f"❌ 予期しないエラー: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error: {str(e)}")
     
+# データベースシード実行エンドポイント
 @app.get("/seed-database")
 def seed_database(secret_key: str):
     """
@@ -140,4 +141,32 @@ def seed_database(secret_key: str):
         raise HTTPException(
             status_code=500,
             detail={"message": "Failed to seed database.", "error": e.stderr}
+        )
+
+# データベースマイグレーション実行エンドポイント
+@app.get("/run-migrations")
+def run_migrations(secret_key: str):
+    """
+    データベースのマイグレーション（テーブル作成）を実行するための秘密のエンドポイント。
+    """
+    # 1. Renderに設定した秘密のキーを取得
+    correct_secret = os.getenv("MIGRATION_SECRET_KEY")
+
+    if not correct_secret or secret_key != correct_secret:
+        raise HTTPException(status_code=403, detail="Invalid secret key")
+
+    try:
+        # 2. Alembicのマイグレーションコマンドを実行
+        #    alembic.iniファイルが作業ディレクトリにあることを確認
+        result = subprocess.run(
+            ["alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return {"message": "Migrations applied successfully!", "output": result.stdout}
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"message": "Failed to apply migrations.", "error": e.stderr}
         )
